@@ -1,0 +1,148 @@
+:root {
+  /* Tons de preto usados no site */
+  --bg-main: #0a0a0a;      /* fundo geral das telas */
+  --bg-sidebar: #161616;   /* painel lateral, um pouco mais claro */
+  --bg-hover: #222222;     /* hover em itens da sidebar */
+
+  /* Texto */
+  --text-main: #ffffff;
+  --text-muted: #9a9a9a;
+
+  /* Cor de destaque (troque aqui entre laranja e verde neon) */
+  --accent: #39ff8f;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Painel lateral */
+.sidebar {
+  width: 240px;
+  background: var(--bg-sidebar);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  gap: 32px;
+}
+
+.sidebar-logo {
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.logo-text {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.accent {
+  color: var(--accent);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-item {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-main);
+}
+
+.nav-item.active {
+  background: var(--bg-hover);
+  color: var(--text-main);
+  border-left: 2px solid var(--accent);
+}
+
+/* Área de conteúdo */
+.content {
+  flex: 1;
+  padding: 40px;
+}
+
+.content h1 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.content .subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+/* Só uma tela fica visível por vez */
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+/* Estado vazio (sem dispositivos / sem arquivos ainda) */
+.empty-state {
+  border: 1px dashed var(--bg-hover);
+  border-radius: 10px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-state p {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.primary-btn {
+  background: var(--accent);
+  color: #06130b;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.primary-btn:hover {
+  opacity: 0.85;
+}
