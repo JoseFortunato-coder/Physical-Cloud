@@ -268,3 +268,22 @@ body {
   position: relative;
   z-index: 2; 
 }
+.btn-tornar-servidor {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  padding: 14px 28px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.15s ease;
+}
+
+.btn-tornar-servidor:hover {
+  opacity: 0.85;
+}
