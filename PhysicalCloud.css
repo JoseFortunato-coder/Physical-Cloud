@@ -146,3 +146,125 @@ body {
 .primary-btn:hover {
   opacity: 0.85;
 }
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-box {
+  background: #1c1c1c;
+  border: 1px solid #2d2d2d; /* Borda sutil e válida */
+  border-radius: 16px;
+  padding: 36px 32px; /* Reduzido de 70px para dar proporção retangular harmoniosa */
+  max-width: 480px; /* Um pouco mais largo para acomodar bem os elementos */
+  width: 90%;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6); /* Sombra para afastar do fundo */
+}
+
+/* Título e Subtítulo */
+.modal-box h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.modal-box .subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: #a0a0a0; /* Tom cinza claro para leitura confortável */
+  margin-bottom: 28px;
+}
+
+/* Botão Fechar (&times;) */
+.close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  color: #888888;
+  font-size: 20px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #ffffff;
+}
+
+/* Quadradinhos do Código (OTP style) */
+.code-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.code-digit {
+  width: 50px;
+  height: 56px;
+  background: #121212;
+  border: 1.5px solid #00e676; /* Verde em destaque na borda */
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #00e676; /* Verde do texto */
+  box-shadow: 0 4px 12px rgba(0, 230, 118, 0.15); /* Glow sutil verde */
+}
+
+.code-divider {
+  color: #555555;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 4px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.modal-subtitle {
+  color: #aaa;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.codigo-display {
+  font-size: 40px;
+  font-weight: 700;
+  color: #00e676;
+  
+  
+  letter-spacing: 36px; 
+  margin-left: 35px; 
+  margin-bottom: -61px; 
+  position: relative;
+  z-index: 2; 
+}
