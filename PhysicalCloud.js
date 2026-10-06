@@ -8,6 +8,73 @@ const inserirCodigo = document.getElementById("inserir-Codigo");
 const inputs = document.querySelectorAll(".code-input-box");
 inputs.forEach((input, index) => {
     input.addEventListener("input", () => {
+        if (document.getElementsByClassName("code-input-box")[5].value === "" && 
+        document.getElementsByClassName("code-input-box")[4].value !== "" &&
+        document.getElementsByClassName("code-input-box")[3].value !== "" &&
+        document.getElementsByClassName("code-input-box")[2].value !== "" &&
+        document.getElementsByClassName("code-input-box")[1].value !== "" &&
+        document.getElementsByClassName("code-input-box")[0].value !== "" ) {
+            if (document.getElementsByClassName("code-input-box")[5].value !== "" ){
+                
+const codigoFinal = Number(Array.from(inputs).map(input => input.value).join(''));
+            socket.send(JSON.stringify({ type: 'conectar', codigo: codigoFinal }));
+            }
+            console.log(codigoFinal);
+
+        }
+         if (document.getElementsByClassName("code-input-box")[4].value === "" && 
+        document.getElementsByClassName("code-input-box")[5].value !== "" &&
+        document.getElementsByClassName("code-input-box")[3].value !== "" &&
+        document.getElementsByClassName("code-input-box")[2].value !== "" &&
+        document.getElementsByClassName("code-input-box")[1].value !== "" &&
+        document.getElementsByClassName("code-input-box")[0].value !== "" ) {
+            if (document.getElementsByClassName("code-input-box")[4].value !== "" ){
+
+            }
+            
+        }
+         if (document.getElementsByClassName("code-input-box")[3].value === "" && 
+        document.getElementsByClassName("code-input-box")[4].value !== "" &&
+        document.getElementsByClassName("code-input-box")[5].value !== "" &&
+        document.getElementsByClassName("code-input-box")[2].value !== "" &&
+        document.getElementsByClassName("code-input-box")[1].value !== "" &&
+        document.getElementsByClassName("code-input-box")[0].value !== "" ) {
+            if (document.getElementsByClassName("code-input-box")[3].value !== "" ){
+
+            }
+            
+        }
+         if (document.getElementsByClassName("code-input-box")[2].value === "" && 
+        document.getElementsByClassName("code-input-box")[4].value !== "" &&
+        document.getElementsByClassName("code-input-box")[3].value !== "" &&
+        document.getElementsByClassName("code-input-box")[5].value !== "" &&
+        document.getElementsByClassName("code-input-box")[1].value !== "" &&
+        document.getElementsByClassName("code-input-box")[0].value !== "" ) {
+            if (document.getElementsByClassName("code-input-box")[2].value !== "" ){
+
+            }
+        }
+         if (document.getElementsByClassName("code-input-box")[1].value === "" && 
+        document.getElementsByClassName("code-input-box")[4].value !== "" &&
+        document.getElementsByClassName("code-input-box")[3].value !== "" &&
+        document.getElementsByClassName("code-input-box")[2].value !== "" &&
+        document.getElementsByClassName("code-input-box")[5].value !== "" &&
+        document.getElementsByClassName("code-input-box")[0].value !== "" ) {
+            if (document.getElementsByClassName("code-input-box")[1].value !== "" ){
+
+            }
+        }
+         if (document.getElementsByClassName("code-input-box")[0].value === "" && 
+        document.getElementsByClassName("code-input-box")[4].value !== "" &&
+        document.getElementsByClassName("code-input-box")[3].value !== "" &&
+        document.getElementsByClassName("code-input-box")[2].value !== "" &&
+        document.getElementsByClassName("code-input-box")[1].value !== "" &&
+        document.getElementsByClassName("code-input-box")[5].value !== "" ) {
+            if (document.getElementsByClassName("code-input-box")[0].value !== "" ){
+
+            }
+            
+        }
         if (input.value.length >= input.maxLength) {
             const nextInput = inputs[index + 1];
             if (nextInput) {
@@ -17,8 +84,9 @@ inputs.forEach((input, index) => {
     });
 });
 inputs.forEach((input, index) => {
+    input.addEventListener("keydown", (event) => {
     input.addEventListener("input", () => {
-        input.addEventListener("keydown", (event) => {
+        
             if (event.key === "Backspace" && input.value.length === 0) {
                 const previousInput = inputs[index - 1];
                 if (previousInput) {
@@ -35,10 +103,17 @@ document.getElementById("btn-tornar-servidor").addEventListener("click", () => {
     telaDeCodigo.classList.remove("active");
 })
 document.getElementById("btn-conectar").addEventListener("click", () => {
+    document.getElementsByClassName("code-input-box")[0].value = "";
+     document.getElementsByClassName("code-input-box")[1].value = "";
+      document.getElementsByClassName("code-input-box")[2].value = "";
+       document.getElementsByClassName("code-input-box")[3].value = "";
+        document.getElementsByClassName("code-input-box")[4].value = "";
+         document.getElementsByClassName("code-input-box")[5].value = "";
     telaDeConectar.classList.add("active");
     console.log("Conectar button clicked");
 inserirCodigo.classList.add("code-input-container");
 fecharModalConectar.classList.add("modal-close");
+
     fecharModalConectar.addEventListener("click", () => {
     telaDeConectar.classList.remove("active");
 
