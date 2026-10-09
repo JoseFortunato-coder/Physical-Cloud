@@ -6,75 +6,21 @@ const telaDeConectar = document.getElementById("modal-conectar");
 const fecharModalConectar = document.getElementById("btn-fechar-conectar");
 const inserirCodigo = document.getElementById("inserir-Codigo");
 const inputs = document.querySelectorAll(".code-input-box");
+
 inputs.forEach((input, index) => {
     input.addEventListener("input", () => {
-        if (document.getElementsByClassName("code-input-box")[5].value === "" && 
-        document.getElementsByClassName("code-input-box")[4].value !== "" &&
-        document.getElementsByClassName("code-input-box")[3].value !== "" &&
-        document.getElementsByClassName("code-input-box")[2].value !== "" &&
-        document.getElementsByClassName("code-input-box")[1].value !== "" &&
-        document.getElementsByClassName("code-input-box")[0].value !== "" ) {
-            if (document.getElementsByClassName("code-input-box")[5].value !== "" ){
+        
+        if ( Array.from(inputs).every(input => input.value !== "") ) {
+         
                 
 const codigoFinal = Number(Array.from(inputs).map(input => input.value).join(''));
+
             socket.send(JSON.stringify({ type: 'conectar', codigo: codigoFinal }));
-            }
+            
             console.log(codigoFinal);
 
         }
-         if (document.getElementsByClassName("code-input-box")[4].value === "" && 
-        document.getElementsByClassName("code-input-box")[5].value !== "" &&
-        document.getElementsByClassName("code-input-box")[3].value !== "" &&
-        document.getElementsByClassName("code-input-box")[2].value !== "" &&
-        document.getElementsByClassName("code-input-box")[1].value !== "" &&
-        document.getElementsByClassName("code-input-box")[0].value !== "" ) {
-            if (document.getElementsByClassName("code-input-box")[4].value !== "" ){
-
-            }
-            
-        }
-         if (document.getElementsByClassName("code-input-box")[3].value === "" && 
-        document.getElementsByClassName("code-input-box")[4].value !== "" &&
-        document.getElementsByClassName("code-input-box")[5].value !== "" &&
-        document.getElementsByClassName("code-input-box")[2].value !== "" &&
-        document.getElementsByClassName("code-input-box")[1].value !== "" &&
-        document.getElementsByClassName("code-input-box")[0].value !== "" ) {
-            if (document.getElementsByClassName("code-input-box")[3].value !== "" ){
-
-            }
-            
-        }
-         if (document.getElementsByClassName("code-input-box")[2].value === "" && 
-        document.getElementsByClassName("code-input-box")[4].value !== "" &&
-        document.getElementsByClassName("code-input-box")[3].value !== "" &&
-        document.getElementsByClassName("code-input-box")[5].value !== "" &&
-        document.getElementsByClassName("code-input-box")[1].value !== "" &&
-        document.getElementsByClassName("code-input-box")[0].value !== "" ) {
-            if (document.getElementsByClassName("code-input-box")[2].value !== "" ){
-
-            }
-        }
-         if (document.getElementsByClassName("code-input-box")[1].value === "" && 
-        document.getElementsByClassName("code-input-box")[4].value !== "" &&
-        document.getElementsByClassName("code-input-box")[3].value !== "" &&
-        document.getElementsByClassName("code-input-box")[2].value !== "" &&
-        document.getElementsByClassName("code-input-box")[5].value !== "" &&
-        document.getElementsByClassName("code-input-box")[0].value !== "" ) {
-            if (document.getElementsByClassName("code-input-box")[1].value !== "" ){
-
-            }
-        }
-         if (document.getElementsByClassName("code-input-box")[0].value === "" && 
-        document.getElementsByClassName("code-input-box")[4].value !== "" &&
-        document.getElementsByClassName("code-input-box")[3].value !== "" &&
-        document.getElementsByClassName("code-input-box")[2].value !== "" &&
-        document.getElementsByClassName("code-input-box")[1].value !== "" &&
-        document.getElementsByClassName("code-input-box")[5].value !== "" ) {
-            if (document.getElementsByClassName("code-input-box")[0].value !== "" ){
-
-            }
-            
-        }
+      
         if (input.value.length >= input.maxLength) {
             const nextInput = inputs[index + 1];
             if (nextInput) {
@@ -83,6 +29,7 @@ const codigoFinal = Number(Array.from(inputs).map(input => input.value).join('')
         }
     });
 });
+
 inputs.forEach((input, index) => {
     input.addEventListener("keydown", (event) => {
     input.addEventListener("input", () => {
@@ -132,8 +79,10 @@ socket.addEventListener("message", (event) => {
         telaDeCodigo.classList.remove("active");
     });
 }
- 
+ if (dados.type === "erro"){
+    alert ("Esse não é o código certo.")
+ }
 if (dados.type === "conectado") {
-
+    telaDeConectar.classList.remove("active")
 }
 });
