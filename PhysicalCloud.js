@@ -1,4 +1,4 @@
-const socket = new WebSocket('ws://localhost:3000')
+const socket = new WebSocket(`ws:/${window.location.hostname}/:3000`)
 const telaDeCodigo = document.getElementById("modal-codigo");
 const codigoTexto = document.getElementById("codigo-texto");
 const fecharModal = document.getElementById("btn-fechar-modal");
