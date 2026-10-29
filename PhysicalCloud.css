@@ -754,4 +754,24 @@ body {
 #modal-feedback select:focus,
 #modal-feedback textarea:focus {
   border-color: var(--accent);
+}/* Ajustes no botão de feedback e ícone do dispositivo */
+#btn-abrir-feedback {
+  margin-top: auto !important;
+  border-top: 1px solid #2a2a2a !important;
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--accent); 
+  font-weight: 600;
+  text-align: left;
+}
+#btn-abrir-feedback:hover {
+  background: var(--bg-hover);
+  color: var(--accent);
+}
+
+.device-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }

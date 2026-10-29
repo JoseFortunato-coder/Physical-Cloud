@@ -17,11 +17,7 @@ if (!(/** @type {any} */ (window).PhysicalCloud)) {
 /** @type {Map<string, string>} */ const ativasRecebimento = new Map();
 /** @type {Map<string, { fila: Array<() => Promise<void>>, ocupado: boolean, cancelado: boolean }>} */ const controladoresFila = new Map();
 
-// Ofertas pendentes aguardando o usuário escolher onde salvar
-/** @type {Map<string, { transferId: string, sessaoId: string, nome: string, tamanho: number, tipo: string, dc: RTCDataChannel, enfileirar: (fn: () => Promise<void>) => void }>} */
 const ofertasPendentes = new Map();
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
  * @param {string} sessaoId
@@ -65,15 +61,11 @@ function emitir(tipo, detalhe) {
     window.dispatchEvent(new CustomEvent(tipo, { detail: detalhe }));
 }
 
-// ─── Aguardar aceitação ─────────────────────────────────────────────────────
-
-/** @type {Map<string, { resolve: () => void, reject: (e: Error) => void }>} */
 const aguardandoAceitacaoMap = new Map();
 
 /**
  * @param {string} transferId
  * @param {RTCDataChannel} dc
- * @returns {Promise<void>}
  */
 function aguardarAceitacao(transferId, dc) {
     return new Promise((resolve, reject) => {
@@ -83,8 +75,8 @@ function aguardarAceitacao(transferId, dc) {
         }, TIMEOUT_ACEITE_MS);
 
         aguardandoAceitacaoMap.set(transferId, {
-            resolve: () => { clearTimeout(timeout); resolve(); },
-            reject: (e) => { clearTimeout(timeout); reject(e); },
+            resolve: () => { clearTimeout(timeout); resolve(undefined); },
+            reject: (/** @type {any} */ e) => { clearTimeout(timeout); reject(e); },
         });
 
         const onclose = () => {
@@ -108,9 +100,6 @@ function rejeitarAceitacaoPendente(transferId, motivo) {
     }
 }
 
-// ─── Timeout de file-ok/file-error ──────────────────────────────────────────
-
-/** @type {Map<string, ReturnType<typeof setTimeout>>} */
 const timeoutsOk = new Map();
 
 /**
@@ -140,8 +129,6 @@ function cancelarTimeoutOk(transferId) {
     if (t) { clearTimeout(t); timeoutsOk.delete(transferId); }
 }
 
-// ─── Envio ──────────────────────────────────────────────────────────────────
-
 /**
  * @param {string} sessaoId
  * @param {File} arquivo
@@ -154,23 +141,20 @@ async function enviarArquivo(sessaoId, arquivo) {
         return;
     }
 
-    /** @type {ReadableStreamDefaultReader<Uint8Array> | null} */
     let reader = null;
     try {
         reader = arquivo.stream().getReader();
     } catch (e) {
-        console.error("Falha ao abrir stream do arquivo:", e);
         emitir("physicalcloud:transfer-erro", { sessaoId, motivo: "Não foi possível ler o arquivo selecionado." });
         processarFila(sessaoId);
         return;
     }
 
     const transferId = gerarTransferId();
-    /** @type {{ transferId: string; sessaoId: string; nome: string; tamanho: number; tipo: string; enviados: number; estado: string; cancelarPausa: (() => void) | null; cancelamentoEmitido: boolean }} */
     const entrada = {
         transferId, sessaoId, nome: arquivo.name, tamanho: arquivo.size,
         tipo: arquivo.type || "application/octet-stream", enviados: 0, estado: "enviando",
-        cancelarPausa: null, cancelamentoEmitido: false,
+        cancelarPausa: /** @type {(() => void) | null} */ (null), cancelamentoEmitido: false,
     };
     transferencias.set(transferId, entrada);
     ativasEnvio.set(sessaoId, transferId);
@@ -181,7 +165,6 @@ async function enviarArquivo(sessaoId, arquivo) {
             tamanho: arquivo.size, tipo: arquivo.type || "application/octet-stream",
         }));
     } catch (e) {
-        console.error("Falha ao enviar file-offer:", e);
         reader.releaseLock();
         limparSeProprio(sessaoId, transferId);
         processarFila(sessaoId);
@@ -293,8 +276,6 @@ async function enviarArquivo(sessaoId, arquivo) {
     }
 }
 
-// ─── Fila de envio ─────────────────────────────────────────────────────────
-
 /**
  * @param {string} sessaoId
  */
@@ -320,13 +301,11 @@ function enfileirarArquivos(sessaoId, arquivos) {
     processarFila(sessaoId);
 }
 
-// ─── Recebimento ────────────────────────────────────────────────────────────
-
-/** @type {Map<string, any>} */ const recebimentos = new Map();
+const recebimentos = new Map();
 
 /**
  * @param {string} sessaoId
- * @param {{ transferId?: any; nome?: any; tamanho?: any; tipo?: any; }} msg
+ * @param {{ transferId: any; nome: any; tamanho: any; tipo: any; }} msg
  * @param {any} dc
  * @param {any} enfileirar
  */
@@ -358,7 +337,7 @@ async function tratarFileOffer(sessaoId, msg, dc, enfileirar) {
 
 /**
  * @param {string} sessaoId
- * @param {{ type: any; transferId: string; sha256: any; motivo: string; }} msg
+ * @param {any} msg
  * @param {{ send: (arg0: string) => void; }} dc
  * @param {(fn: any) => void} enfileirar
  */
@@ -382,7 +361,6 @@ async function tratarMensagemJson(sessaoId, msg, dc, enfileirar) {
 
             const sha256Remoto = msg.sha256;
 
-            // Verifica se o tamanho recebido bate com o esperado
             if (rec.recebidos !== rec.tamanho) {
                 try { dc.send(JSON.stringify({ type: "file-error", transferId: rec.transferId, motivo: "Tamanho do arquivo não confere." })); } catch {}
                 emitir("physicalcloud:transfer-erro", { sessaoId, transferId: rec.transferId, motivo: "Arquivo incompleto." });
@@ -394,7 +372,6 @@ async function tratarMensagemJson(sessaoId, msg, dc, enfileirar) {
                 try {
                     await rec.writerHandle.close();
                 } catch (e) {
-                    console.error("Erro ao fechar writer:", e);
                     try { dc.send(JSON.stringify({ type: "file-error", transferId: rec.transferId, motivo: "Falha ao salvar arquivo." })); } catch {}
                     recebimentos.delete(sessaoId); ativasRecebimento.delete(sessaoId);
                     return;
@@ -508,7 +485,6 @@ async function tratarChunk(sessaoId, data, dc) {
         try {
             await rec.writerHandle.write(data);
         } catch (e) {
-            console.error("Erro ao escrever chunk em disco:", e);
             if (recebimentos.get(sessaoId) !== rec) return;
             try { if (dc.readyState === "open") dc.send(JSON.stringify({ type: "file-cancel", transferId: rec.transferId })); } catch {}
             await rec.writerHandle.abort().catch(() => {});
@@ -524,13 +500,12 @@ async function tratarChunk(sessaoId, data, dc) {
     emitir("physicalcloud:transfer-progresso", { transferId: rec.transferId, sessaoId, enviados: rec.recebidos, total: rec.tamanho, timestamp: Date.now() });
 }
 
-// ─── Integração com WebRTC ──────────────────────────────────────────────────
-
 window.addEventListener("physicalcloud:canal-aberto", (event) => {
     const { sessaoId, dc } = /** @type {CustomEvent} */ (event).detail;
     canais.set(sessaoId, dc);
 
-    const ctrl = { fila: /** @type {Array<() => Promise<void>>} */ ([]), ocupado: false, cancelado: false };
+    /** @type {{ fila: Array<() => Promise<void>>; ocupado: boolean; cancelado: boolean }} */
+    const ctrl = { fila: [], ocupado: false, cancelado: false };
     controladoresFila.set(sessaoId, ctrl);
 
     function processar() {
@@ -546,7 +521,7 @@ window.addEventListener("physicalcloud:canal-aberto", (event) => {
     }
 
     /**
-    * @param {() => Promise<void>} fn
+     * @param {{ (): Promise<void>; (): Promise<void>; }} fn
      */
     function enfileirar(fn) {
         if (ctrl.cancelado) return;
@@ -593,8 +568,6 @@ window.addEventListener("physicalcloud:sessao-encerrada", (event) => {
     }
 });
 
-// ─── Botão "Enviar arquivo" ─────────────────────────────────────────────────
-
 window.addEventListener("physicalcloud:solicitar-envio", () => {
     if (canais.size === 0) { window.dispatchEvent(new CustomEvent("physicalcloud:transfer-sem-canal")); return; }
     const input = document.createElement("input");
@@ -613,8 +586,6 @@ window.addEventListener("physicalcloud:solicitar-envio", () => {
     input.click();
 });
 
-// ─── API pública ────────────────────────────────────────────────────────────
-
 (/** @type {any} */ (window)).PhysicalCloudTransfer = {
     enfileirarArquivos, canais, transferencias,
 
@@ -628,33 +599,41 @@ window.addEventListener("physicalcloud:solicitar-envio", () => {
 
         const { sessaoId, nome, tamanho, tipo, dc, enfileirar } = oferta;
 
+        // Cria o registro na memória, mas NÃO envia o file-accept ainda
         recebimentos.set(sessaoId, { transferId, nome, tamanho, tipo, chunks: [], recebidos: 0, writerHandle: null, fileHandle: null });
         ativasRecebimento.set(sessaoId, transferId);
-
-        dc.send(JSON.stringify({ type: "file-accept", transferId }));
-
-        emitir("physicalcloud:transfer-inicio", { transferId, sessaoId, nome, tamanho, direcao: "recebimento" });
 
         const temFSAPI = "showSaveFilePicker" in window;
         if (temFSAPI) {
             (/** @type {any} */ (window)).showSaveFilePicker({ suggestedName: nome, types: [{ description: "Arquivo", accept: { [tipo]: [] } }] })
-                .then((/** @type {{ createWritable: () => any; }} */ fh) => {
-                    enfileirar(async () => {
-                        const wh = await fh.createWritable();
-                        const rec = recebimentos.get(sessaoId);
-                        if (!rec || rec.transferId !== transferId) { await wh.abort().catch(() => {}); return; }
-                        // Se já recebeu chunks enquanto o picker estava aberto, grava os antigos
-                        for (const chunk of rec.chunks) await wh.write(chunk);
-                        rec.chunks = [];
-                        rec.writerHandle = wh; rec.fileHandle = fh;
-                    });
+                .then(async (/** @type {{ createWritable: () => any; }} */ fh) => {
+                    // SÓ AGORA, depois que o usuário escolheu onde salvar, nós avisamos o emissor
+                    const wh = await fh.createWritable();
+                    const rec = recebimentos.get(sessaoId);
+                    if (!rec || rec.transferId !== transferId) { await wh.abort().catch(() => {}); return; }
+                    
+                    rec.writerHandle = wh; 
+                    rec.fileHandle = fh;
+                    
+                    dc.send(JSON.stringify({ type: "file-accept", transferId }));
+                    emitir("physicalcloud:transfer-inicio", { transferId, sessaoId, nome, tamanho, direcao: "recebimento" });
                 })
-                .catch(() => { /* usuário cancelou o picker */ });
+                .catch((/** @type {any} */ err) => {
+                    // Usuário cancelou a janela de salvar
+                    console.warn("Salvamento cancelado pelo usuário:", err);
+                    recebimentos.delete(sessaoId);
+                    ativasRecebimento.delete(sessaoId);
+                    try { dc.send(JSON.stringify({ type: "file-error", transferId, motivo: "Cancelado pelo usuário (sem local de salvamento)." })); } catch {}
+                });
+        } else {
+            // Fallback (navegadores sem FSAPI) - salva na memória e baixa de uma vez
+            dc.send(JSON.stringify({ type: "file-accept", transferId }));
+            emitir("physicalcloud:transfer-inicio", { transferId, sessaoId, nome, tamanho, direcao: "recebimento" });
         }
     },
 
     /**
-     * @param {string} transferId
+     * @param {any} transferId
      */
     recusarRecebimento(transferId) {
         const oferta = ofertasPendentes.get(transferId);

@@ -15,19 +15,25 @@
 
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-logo">
+        <!-- NOVA LOGO: Nuvem verde com setas -->
         <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M6.5 18.5C4.01 18.5 2 16.49 2 14C2 11.76 3.64 9.9 5.79 9.56C6.32 7.22 8.41 5.5 10.9 5.5C13.61 5.5 15.85 7.49 16.22 10.08C18.36 10.36 20 12.18 20 14.4C20 16.81 18.04 18.77 15.63 18.77H6.5V18.5Z" fill="currentColor"/>
+          <path d="M17.5 19H9C6.23858 19 4 16.7614 4 14C4 11.4805 5.86486 9.39688 8.29261 9.04353C8.96302 6.18154 11.5278 4 14.5 4C17.7445 4 20.4558 6.36353 20.9355 9.47678C22.6924 10.0123 24 11.6417 24 13.5C24 16.5376 21.5376 19 18.5 19H17.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M9 15L11 13L13 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M11 13V18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M17 13L15 15L13 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15 15V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         </svg>
         <span class="logo-text">Physical<span class="accent">Cloud</span></span>
       </div>
 
       <nav class="sidebar-nav">
         <button class="nav-item active" data-tab="dispositivos">Dispositivos conectados</button>
-        <button class="nav-item" data-tab="nuvem">Arquivos</button>
-
+        <!-- ABA RENOMEADA -->
+        <button class="nav-item" data-tab="nuvem">Envio de arquivos</button>
       </nav>
-  <button class="nav-item" id="btn-abrir-feedback">★ Avaliar o App</button>
 
+      <!-- Botão de feedback fixo na sidebar -->
+      <button class="nav-item" id="btn-abrir-feedback">★ Avaliar o App</button>
     </aside>
 
     <main class="content">
@@ -52,7 +58,7 @@
       </section>
 
       <section id="nuvem" class="tab-panel">
-        <h1>Arquivos</h1>
+        <h1>Envio de arquivos</h1>
         <p class="subtitle">Envie e receba arquivos diretamente entre dispositivos via P2P.</p>
 
         <div id="nuvem-sem-canal" class="empty-state">
@@ -69,7 +75,7 @@
 
           <div class="nuvem-acoes">
             <button class="primary-btn" id="btn-enviar">
-              <span class="btn-icon">&#8679;</span> Enviar arquivo
+              <span class="btn-icon">&#8679;</span> Selecionar e Enviar arquivo
             </button>
           </div>
 
@@ -122,7 +128,7 @@
       </div>
     </div>
   </div>
-    <!-- Modal de Confirmação de Recebimento (Bloco C.1) -->
+
   <div class="modal-overlay" id="modal-recebimento">
     <div class="modal-box">
       <h2>Receber arquivo?</h2>
@@ -139,7 +145,7 @@
       </div>
     </div>
   </div>
-  <!-- Modal de Feedback (Estrelas e Comentário) -->
+
   <div class="modal-overlay" id="modal-feedback">
     <div class="modal-box" style="text-align: left;">
       <button class="modal-close" id="btn-fechar-feedback">&times;</button>
@@ -171,10 +177,9 @@
     </div>
   </div>
 
+  <button class="btn-tornar-servidor" id="btn-tornar-servidor">Se tornar o dispositivo servidor</button>
 
-
-
-  <<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   
   <script src="PhysicalCloud.js"></script>
   <script src="PhysicalCloud-webrtc.js"></script>
@@ -232,7 +237,6 @@
       if (sessaoIds.length > 1) {
         destinoContainer.style.display = "";
         const sessoes = /** @type {any} */ (window).PhysicalCloud?.sessoes;
-        // [Fix.6] replaceChildren em vez de innerHTML = ""
         destinoSelect.replaceChildren();
         for (const sid of sessaoIds) {
           const opt = document.createElement("option");
@@ -281,7 +285,6 @@
     /** @type {Map<string, HTMLElement>} */
     const cardsPorTransfer = new Map();
 
-    // [Fix.4/B1] Amostras para cálculo de velocidade MB/s real.
     /** @type {Map<string, { ultimoEnviado: number, ultimoTimestamp: number, velocidade: number }>} */
     const amostrasVelocidade = new Map();
 
@@ -354,8 +357,6 @@
       cancelBtn.title = "Cancelar";
       cancelBtn.textContent = "✕";
       cancelBtn.addEventListener("click", () => {
-        // [Fix.2/C2] Passa transferId (não sessaoId) para evitar cancelar
-        // a transferência errada em sessões bidirecionais.
         const t = /** @type {any} */ (window).PhysicalCloudTransfer;
         if (t) t.cancelarTransferencia(transferId);
       });
@@ -396,7 +397,6 @@
 
       if (barra) barra.style.width = pct + "%";
 
-      // [Fix.4/B1] Velocidade real + ETA
       const vel = calcularVelocidade(transferId, enviados);
       const restante = Math.max(0, total - enviados);
       const eta = vel > 0 ? restante / vel : Infinity;
@@ -491,7 +491,8 @@
         }, 5000);
       }
     });
-        // ─── Bloco C.1: Confirmação de Recebimento ──────────────────────────────
+
+    // ─── Bloco C.1: Confirmação de Recebimento ──────────────────────────────
     let ofertaAtual = null;
     const modalRecebimento = document.getElementById("modal-recebimento");
     const textoRecebimento = document.getElementById("recebimento-texto");

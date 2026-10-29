@@ -148,10 +148,17 @@ function atualizarListaDispositivos() {
         card.className = "device-card";
         card.dataset.sessaoId = sessaoId;
 
-        const icone = document.createElement("div");
+                const icone = document.createElement("div");
         icone.className = "device-icon";
-        icone.textContent = s.papel === "servidor" ? "💻" : "📱";
-
+        // Ícone SVG de Notebook + Celular
+        icone.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 28px; height: 28px; color: var(--accent);">
+            <path d="M8 17H3.5C3.22386 17 3 16.7761 3 16.5V5.5C3 5.22386 3.22386 5 3.5 5H16.5C16.7761 5 17 5.22386 17 5.5V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M2 19H18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            <rect x="12" y="9" width="9" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+            <path d="M15 17H18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        `;
         const info = document.createElement("div");
         info.className = "device-info";
 
