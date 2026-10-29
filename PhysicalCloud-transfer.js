@@ -18,6 +18,7 @@ if (!(/** @type {any} */ (window).PhysicalCloud)) {
 /** @type {Map<string, { fila: Array<() => Promise<void>>, ocupado: boolean, cancelado: boolean }>} */ const controladoresFila = new Map();
 
 const ofertasPendentes = new Map();
+/** @type {Map<string, FileSystemDirectoryHandle>} */ const pastasCompartilhadas = new Map();
 
 /**
  * @param {string} sessaoId
@@ -55,7 +56,7 @@ function gerarTransferId() {
 
 /**
  * @param {string} tipo
- * @param {{ transferId?: any; sessaoId: any; motivo?: any; nome?: any; tamanho?: any; direcao?: string; enviados?: any; total?: any; timestamp?: number; nomeRemetente?: any; }} detalhe
+ * @param {{ transferId?: any; sessaoId?: any; motivo?: any; nome?: any; tamanho?: any; direcao?: string; enviados?: any; total?: any; timestamp?: number; nomeRemetente?: any; erro?: any; caminho?: any; itens?: any; paginaAtual?: any; totalPaginas?: any; }} detalhe
  */
 function emitir(tipo, detalhe) {
     window.dispatchEvent(new CustomEvent(tipo, { detail: detalhe }));
@@ -128,6 +129,117 @@ function cancelarTimeoutOk(transferId) {
     const t = timeoutsOk.get(transferId);
     if (t) { clearTimeout(t); timeoutsOk.delete(transferId); }
 }
+
+// ─── EXPLORADOR REMOTO ───────────────────────────────────────────────────────
+
+/**
+ * @param {any[] | FileSystemDirectoryHandle} dirHandle
+ */
+async function listarDiretorio(dirHandle, caminhoAtual = "") {
+    const itens = [];
+    for await (const entry of dirHandle.values()) {
+        const caminho = caminhoAtual ? `${caminhoAtual}/${entry.name}` : entry.name;
+        if (entry.kind === "file") {
+            const file = await entry.getFile();
+            itens.push({ nome: entry.name, caminho, tipo: "file", tamanho: file.size });
+        } else {
+            itens.push({ nome: entry.name, caminho, tipo: "directory", tamanho: 0 });
+        }
+    }
+    return itens.sort((a, b) => {
+        if (a.tipo !== b.tipo) return a.tipo === "directory" ? -1 : 1;
+        return a.nome.localeCompare(b.nome);
+    });
+}
+
+/**
+ * @param {string} sessaoId
+ * @param {string | undefined} caminhoSolicitado
+ * @param {{ send: (arg0: string) => void; }} dc
+ */
+async function responderListagem(sessaoId, caminhoSolicitado, dc) {
+    const raiz = pastasCompartilhadas.get(sessaoId);
+    if (!raiz) {
+        try {
+            dc.send(JSON.stringify({
+                type: "dir-list-response",
+                caminho: caminhoSolicitado,
+                erro: "O servidor ainda não compartilhou nenhuma pasta. Peça a ele para clicar em 'Puxar arquivos do dispositivo conectado'.",
+            }));
+        } catch {}
+        return;
+    }
+
+    try {
+        let alvo = raiz;
+        if (caminhoSolicitado) {
+            const partes = caminhoSolicitado.split("/").filter(Boolean);
+            for (const parte of partes) {
+                alvo = await alvo.getDirectoryHandle(parte);
+            }
+        }
+        const itens = await listarDiretorio(alvo, caminhoSolicitado);
+
+        const TAMANHO_PAGINA = 100;
+        const totalPaginas = Math.ceil(itens.length / TAMANHO_PAGINA);
+
+        if (totalPaginas === 0) {
+            dc.send(JSON.stringify({
+                type: "dir-list-response",
+                caminho: caminhoSolicitado,
+                itens: [],
+                paginaAtual: 1,
+                totalPaginas: 1,
+            }));
+            return;
+        }
+
+        for (let i = 0; i < totalPaginas; i++) {
+            const inicio = i * TAMANHO_PAGINA;
+            const fim = inicio + TAMANHO_PAGINA;
+            const lote = itens.slice(inicio, fim);
+
+            dc.send(JSON.stringify({
+                type: "dir-list-response",
+                caminho: caminhoSolicitado,
+                itens: lote,
+                paginaAtual: i + 1,
+                totalPaginas: totalPaginas,
+                temMais: i < totalPaginas - 1
+            }));
+        }
+    } catch (e) {
+        console.error("Erro ao listar diretório:", e);
+        try {
+            dc.send(JSON.stringify({
+                type: "dir-list-response",
+                caminho: caminhoSolicitado,
+                erro: "Não foi possível acessar esta pasta. Verifique se ela ainda existe.",
+            }));
+        } catch {}
+    }
+}
+
+/**
+ * @param {string} sessaoId
+ * @param {string} caminho
+ */
+async function obterArquivoPorCaminho(sessaoId, caminho) {
+    const raiz = pastasCompartilhadas.get(sessaoId);
+    if (!raiz) return null;
+
+    const partes = caminho.split("/").filter(Boolean);
+    if (partes.length === 0) return null;
+
+    let dir = raiz;
+    for (let i = 0; i < partes.length - 1; i++) {
+        dir = await dir.getDirectoryHandle(partes[i]);
+    }
+    const fileHandle = await dir.getFileHandle(partes[partes.length - 1]);
+    return fileHandle.getFile();
+}
+
+// ─── ENVIO E RECEBIMENTO BÁSICO ──────────────────────────────────────────────
 
 /**
  * @param {string} sessaoId
@@ -337,7 +449,7 @@ async function tratarFileOffer(sessaoId, msg, dc, enfileirar) {
 
 /**
  * @param {string} sessaoId
- * @param {any} msg
+ * @param {{ type: any; transferId: string; sha256: any; motivo: string; caminho: any; erro: any; itens: any; paginaAtual: any; totalPaginas: any; }} msg
  * @param {{ send: (arg0: string) => void; }} dc
  * @param {(fn: any) => void} enfileirar
  */
@@ -346,12 +458,12 @@ async function tratarMensagemJson(sessaoId, msg, dc, enfileirar) {
 
     switch (msg.type) {
         case "file-offer":
-            await tratarFileOffer(sessaoId, msg, dc, enfileirar);
+            await tratarFileOffer(sessaoId, /** @type {{ transferId: any; nome: any; tamanho: any; tipo: any; }} */ (/** @type {unknown} */ (msg)), dc, enfileirar);
             break;
 
         case "file-accept": {
             const prom = aguardandoAceitacaoMap.get(msg.transferId);
-            if (prom) { aguardandoAceitacaoMap.delete(msg.transferId); prom.resolve(); }
+            if (prom) { aguardandoAceitacaoMap.delete(msg.transferId); prom.resolve(undefined); }
             break;
         }
 
@@ -469,6 +581,56 @@ async function tratarMensagemJson(sessaoId, msg, dc, enfileirar) {
             processarFila(sessaoId);
             break;
         }
+
+        // ─── EXPLORADOR REMOTO ───
+
+        case "dir-list-request": {
+            const caminho = typeof msg.caminho === "string" ? msg.caminho : "";
+            await responderListagem(sessaoId, caminho, dc);
+            break;
+        }
+
+        case "dir-list-response": {
+            if (msg.erro) {
+                emitir("physicalcloud:lista-recebida", { erro: msg.erro, caminho: msg.caminho || "" });
+            } else {
+                emitir("physicalcloud:lista-recebida", { 
+                    itens: msg.itens || [], 
+                    caminho: msg.caminho || "",
+                    paginaAtual: msg.paginaAtual,
+                    totalPaginas: msg.totalPaginas
+                });
+            }
+            break;
+        }
+
+        case "file-pull-request": {
+            const caminho = typeof msg.caminho === "string" ? msg.caminho : "";
+            try {
+                const arquivo = await obterArquivoPorCaminho(sessaoId, caminho);
+                if (!arquivo) {
+                    try {
+                        dc.send(JSON.stringify({
+                            type: "file-error",
+                            transferId: msg.transferId || "pull",
+                            motivo: "Arquivo não encontrado no servidor.",
+                        }));
+                    } catch {}
+                    return;
+                }
+                enfileirarArquivos(sessaoId, [arquivo]);
+            } catch (e) {
+                console.error("Erro ao obter arquivo para pull:", e);
+                try {
+                    dc.send(JSON.stringify({
+                        type: "file-error",
+                        transferId: msg.transferId || "pull",
+                        motivo: "Falha ao ler o arquivo no servidor.",
+                    }));
+                } catch {}
+            }
+            break;
+        }
     }
 }
 
@@ -532,7 +694,7 @@ window.addEventListener("physicalcloud:canal-aberto", (event) => {
         if (typeof ev.data === "string") {
             let msg;
             try { msg = JSON.parse(ev.data); } catch { msg = null; }
-            if (msg && typeof msg.type === "string" && msg.type.startsWith("file-")) {
+            if (msg && typeof msg.type === "string" && (msg.type.startsWith("file-") || msg.type.startsWith("dir-"))) {
                 enfileirar(() => tratarMensagemJson(sessaoId, msg, dc, enfileirar));
             }
         } else if (ev.data instanceof ArrayBuffer) {
@@ -540,6 +702,9 @@ window.addEventListener("physicalcloud:canal-aberto", (event) => {
             if (ativasRecebimento.has(sessaoId)) enfileirar(() => tratarChunk(sessaoId, chunk, dc));
         }
     });
+
+    // CORREÇÃO: Atualiza os botões APÓS a sessão ser registrada
+    window.dispatchEvent(new CustomEvent("physicalcloud:sessao-pronta-para-ui"));
 });
 
 window.addEventListener("physicalcloud:sessao-encerrada", (event) => {
@@ -550,6 +715,8 @@ window.addEventListener("physicalcloud:sessao-encerrada", (event) => {
     if (ctrl) { ctrl.cancelado = true; ctrl.fila.length = 0; controladoresFila.delete(sessaoId); }
 
     for (const [tid, oferta] of ofertasPendentes) { if (oferta.sessaoId === sessaoId) ofertasPendentes.delete(tid); }
+    
+    pastasCompartilhadas.delete(sessaoId);
 
     const tidEnvio = ativasEnvio.get(sessaoId);
     if (tidEnvio) {
@@ -586,6 +753,63 @@ window.addEventListener("physicalcloud:solicitar-envio", () => {
     input.click();
 });
 
+// ─── EVENTOS DO EXPLORADOR ───────────────────────────────────────────────────
+
+// CORREÇÃO: Handler para o evento que traz o handle da pasta selecionada
+window.addEventListener("physicalcloud:pasta-selecionada", (event) => {
+    const { handle } = /** @type {CustomEvent} */ (event).detail;
+    const sessoes = /** @type {any} */ (window).PhysicalCloud?.sessoes;
+    let minhaSessao = null;
+    if (sessoes) {
+        for (const [sid, s] of sessoes) {
+            if (s.papel === "servidor") { minhaSessao = sid; break; }
+        }
+    }
+    if (minhaSessao) {
+        pastasCompartilhadas.set(minhaSessao, handle);
+    }
+});
+
+window.addEventListener("physicalcloud:solicitar-exploracao", (event) => {
+    const caminho = /** @type {CustomEvent} */ (event).detail?.caminho || "";
+    const sessoes = /** @type {any} */ (window).PhysicalCloud?.sessoes;
+    let sessaoAlvo = null;
+    if (sessoes) {
+        for (const [sid, s] of sessoes) {
+            if (s.papel === "cliente") { sessaoAlvo = sid; break; }
+        }
+    }
+    if (!sessaoAlvo) return;
+
+    const dc = canais.get(sessaoAlvo);
+    if (dc && dc.readyState === "open") {
+        dc.send(JSON.stringify({ type: "dir-list-request", caminho }));
+    }
+});
+
+window.addEventListener("physicalcloud:solicitar-download-remoto", (event) => {
+    const caminho = /** @type {CustomEvent} */ (event).detail?.caminho;
+    if (!caminho) return;
+
+    const sessoes = /** @type {any} */ (window).PhysicalCloud?.sessoes;
+    let sessaoAlvo = null;
+    if (sessoes) {
+        for (const [sid, s] of sessoes) {
+            if (s.papel === "cliente") { sessaoAlvo = sid; break; }
+        }
+    }
+    if (!sessaoAlvo) return;
+
+    const dc = canais.get(sessaoAlvo);
+    if (dc && dc.readyState === "open") {
+        dc.send(JSON.stringify({
+            type: "file-pull-request",
+            caminho,
+            transferId: gerarTransferId(),
+        }));
+    }
+});
+
 (/** @type {any} */ (window)).PhysicalCloudTransfer = {
     enfileirarArquivos, canais, transferencias,
 
@@ -599,7 +823,6 @@ window.addEventListener("physicalcloud:solicitar-envio", () => {
 
         const { sessaoId, nome, tamanho, tipo, dc, enfileirar } = oferta;
 
-        // Cria o registro na memória, mas NÃO envia o file-accept ainda
         recebimentos.set(sessaoId, { transferId, nome, tamanho, tipo, chunks: [], recebidos: 0, writerHandle: null, fileHandle: null });
         ativasRecebimento.set(sessaoId, transferId);
 
@@ -607,7 +830,6 @@ window.addEventListener("physicalcloud:solicitar-envio", () => {
         if (temFSAPI) {
             (/** @type {any} */ (window)).showSaveFilePicker({ suggestedName: nome, types: [{ description: "Arquivo", accept: { [tipo]: [] } }] })
                 .then(async (/** @type {{ createWritable: () => any; }} */ fh) => {
-                    // SÓ AGORA, depois que o usuário escolheu onde salvar, nós avisamos o emissor
                     const wh = await fh.createWritable();
                     const rec = recebimentos.get(sessaoId);
                     if (!rec || rec.transferId !== transferId) { await wh.abort().catch(() => {}); return; }
@@ -619,14 +841,12 @@ window.addEventListener("physicalcloud:solicitar-envio", () => {
                     emitir("physicalcloud:transfer-inicio", { transferId, sessaoId, nome, tamanho, direcao: "recebimento" });
                 })
                 .catch((/** @type {any} */ err) => {
-                    // Usuário cancelou a janela de salvar
                     console.warn("Salvamento cancelado pelo usuário:", err);
                     recebimentos.delete(sessaoId);
                     ativasRecebimento.delete(sessaoId);
                     try { dc.send(JSON.stringify({ type: "file-error", transferId, motivo: "Cancelado pelo usuário (sem local de salvamento)." })); } catch {}
                 });
         } else {
-            // Fallback (navegadores sem FSAPI) - salva na memória e baixa de uma vez
             dc.send(JSON.stringify({ type: "file-accept", transferId }));
             emitir("physicalcloud:transfer-inicio", { transferId, sessaoId, nome, tamanho, direcao: "recebimento" });
         }

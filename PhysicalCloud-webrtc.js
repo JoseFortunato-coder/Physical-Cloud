@@ -8,7 +8,7 @@ const STUN_SERVERS = [
 const NOME_CANAL = "physicalcloud";
 
 /**
- * @typedef {{ pc: RTCPeerConnection, dc: RTCDataChannel | null, estado: string, sessaoId: string, candidatosPendentes: RTCIceCandidateInit[], descricaoRemotaDefinida: boolean, everConnected: boolean }} EntradaPeer
+ * @typedef {{ pc: RTCPeerConnection, dc: RTCDataChannel | null, estado: string, sessaoId: string, candidatosPendentes: RTCIceCandidateInit[], descricaoRemotaDefinida: boolean, everConnected: boolean, timerDesconexao: ReturnType<typeof setTimeout> | null }} EntradaPeer
  */
 
 /** @type {Map<string, EntradaPeer>} */
@@ -42,14 +42,13 @@ function atualizarEstadoPeer(sessaoId, estado) {
 function fecharPeer(sessaoId) {
     const entrada = peers.get(sessaoId);
     if (!entrada) return;
-    // Remove de peers ANTES de chamar pc.close() para que qualquer disparo
-    // síncrono de onconnectionstatechange causado pelo close() encontre
-    // peers.has() === false e não execute o bloco de cleanup novamente.
+    if (entrada.timerDesconexao) {
+        clearTimeout(entrada.timerDesconexao);
+        entrada.timerDesconexao = null;
+    }
     peers.delete(sessaoId);
     try { entrada.dc?.close(); } catch { /* ignorar */ }
     try { entrada.pc.close(); } catch { /* ignorar */ }
-    // [Fix.4/Item5] Emite "fechado" explicitamente — dc.onclose e
-    // onconnectionstatechange podem não disparar (canal já null ou close falhou).
     atualizarEstadoPeer(sessaoId, "fechado");
 }
 
@@ -114,9 +113,35 @@ function configurarPc(pc, sessaoId) {
         const estado = pc.connectionState;
         atualizarEstadoPeer(sessaoId, estado);
 
-        if (estado === "failed" || estado === "closed") {
-            // [Fix.4/C4] Distinguir "caiu depois de conectar" de "nunca conectou".
+        // CORREÇÃO: Trata "disconnected" como estado transitório
+        if (estado === "disconnected") {
             const entrada = peers.get(sessaoId);
+            if (entrada && !entrada.timerDesconexao) {
+                entrada.timerDesconexao = setTimeout(() => {
+                    const ent = peers.get(sessaoId);
+                    if (ent && ent.estado === "disconnected") {
+                        // Só fecha se após 5s ainda estiver disconnected
+                        const estavaConectado = !!(ent && ent.everConnected);
+                        fecharPeer(sessaoId);
+                        window.dispatchEvent(new CustomEvent("physicalcloud:aviso-local", {
+                            detail: {
+                                sessaoId,
+                                motivo: estavaConectado ? "conexao-perdida" : "conexao-nao-estabelecida",
+                            },
+                        }));
+                        api.encerrarSessao(sessaoId);
+                    }
+                }, 5000);
+            }
+            return;
+        }
+
+        if (estado === "failed" || estado === "closed") {
+            const entrada = peers.get(sessaoId);
+            if (entrada && entrada.timerDesconexao) {
+                clearTimeout(entrada.timerDesconexao);
+                entrada.timerDesconexao = null;
+            }
             const estavaConectado = !!(entrada && entrada.everConnected);
             const sessaoExiste = peers.has(sessaoId);
             fecharPeer(sessaoId);
@@ -139,7 +164,11 @@ function configurarPc(pc, sessaoId) {
  */
 function configurarDc(dc, sessaoId) {
     const entrada = peers.get(sessaoId);
-    if (entrada) entrada.dc = dc;
+    if (entrada) {
+        // CORREÇÃO: Evita configurar o mesmo canal duas vezes
+        if (entrada.dc === dc) return;
+        entrada.dc = dc;
+    }
 
     dc.binaryType = "arraybuffer";
 
@@ -151,7 +180,6 @@ function configurarDc(dc, sessaoId) {
             atualizarEstadoPeer(sessaoId, "verificado");
             window.dispatchEvent(new CustomEvent("physicalcloud:canal-aberto", { detail: { sessaoId, dc } }));
 
-            // [Fix.4/C5] Verificação assíncrona pós-abertura — não bloqueia canal-aberto.
             setTimeout(async () => {
                 const ent = peers.get(sessaoId);
                 if (!ent) return;
@@ -170,8 +198,6 @@ function configurarDc(dc, sessaoId) {
 
     dc.onopen = () => {
         atualizarEstadoPeer(sessaoId, "canal-aberto");
-        // [Fix.4/C4] Marca que o canal chegou a abrir para distinguir
-        // "perdeu conexão" de "nunca conseguiu conectar".
         const ent = peers.get(sessaoId);
         if (ent) ent.everConnected = true;
         try {
@@ -214,7 +240,7 @@ async function iniciarComoCliente(sessaoId) {
 
     const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
     /** @type {EntradaPeer} */
-    const entrada = { pc, dc: null, estado: "iniciando", sessaoId, candidatosPendentes: [], descricaoRemotaDefinida: false, everConnected: false };
+    const entrada = { pc, dc: null, estado: "iniciando", sessaoId, candidatosPendentes: [], descricaoRemotaDefinida: false, everConnected: false, timerDesconexao: null };
     peers.set(sessaoId, entrada);
 
     configurarPc(pc, sessaoId);
@@ -242,7 +268,7 @@ function prepararComoServidor(sessaoId) {
 
     const pc = new RTCPeerConnection({ iceServers: STUN_SERVERS });
     /** @type {EntradaPeer} */
-    const entrada = { pc, dc: null, estado: "aguardando-offer", sessaoId, candidatosPendentes: [], descricaoRemotaDefinida: false, everConnected: false };
+    const entrada = { pc, dc: null, estado: "aguardando-offer", sessaoId, candidatosPendentes: [], descricaoRemotaDefinida: false, everConnected: false, timerDesconexao: null };
     peers.set(sessaoId, entrada);
 
     configurarPc(pc, sessaoId);

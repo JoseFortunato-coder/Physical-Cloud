@@ -9,13 +9,11 @@
 <body>
 
   <div class="app">
-
     <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Menu">&#9776;</button>
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-logo">
-        <!-- NOVA LOGO -->
         <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M17.5 19H9C6.23858 19 4 16.7614 4 14C4 11.4805 5.86486 9.39688 8.29261 9.04353C8.96302 6.18154 11.5278 4 14.5 4C17.7445 4 20.4558 6.36353 20.9355 9.47678C22.6924 10.0123 24 11.6417 24 13.5C24 16.5376 21.5376 19 18.5 19H17.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
           <path d="M9 15L11 13L13 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -28,20 +26,17 @@
 
       <nav class="sidebar-nav">
         <button class="nav-item active" data-tab="dispositivos">Dispositivos conectados</button>
-        <!-- ABA RENOMEADA -->
         <button class="nav-item" data-tab="nuvem">Envio de arquivos</button>
       </nav>
 
-      <!-- Botão de feedback fixo na sidebar -->
       <button class="nav-item" id="btn-abrir-feedback">★ Avaliar o App</button>
     </aside>
 
     <main class="content">
-
       <section id="dispositivos" class="tab-panel active">
         <h1>Dispositivos conectados</h1>
-         <div class="aviso-web">
-          <strong>⚠️ Versão Web:</strong> Para manter a conexão ativa ao trocar de app no celular, vá nas configurações do Chrome e desative a "Otimização de bateria" para este site. Para controle total de pastas e conexões em segundo plano, a versão App estará disponível em breve.
+        <div class="aviso-web">
+          <strong>⚠️ Versão Web:</strong> Para manter a conexão ativa ao trocar de app no celular, vá nas configurações do Chrome e desative a "Otimização de bateria" para este site.
         </div>
         <p class="subtitle">Conecte um celular, computador ou notebook para começar a trocar arquivos.</p>
 
@@ -67,16 +62,14 @@
         </div>
 
         <div id="nuvem-com-canal" style="display:none">
-
           <div id="destino-container" class="destino-container" style="display:none">
             <label class="destino-label" for="destino-select">Enviar para:</label>
             <select id="destino-select" class="destino-select"></select>
           </div>
 
-          <!-- Botão do Servidor Compartilhar Pasta -->
           <div id="servidor-acoes" style="display:none; margin-bottom: 16px;">
              <button class="secondary-btn" id="btn-compartilhar-pasta" style="border-color: var(--accent); color: var(--accent); width: 100%;">
-                📂 Compartilhar uma pasta com o cliente
+                📂 Puxar arquivos do dispositivo conectado
              </button>
           </div>
 
@@ -84,9 +77,8 @@
             <button class="primary-btn" id="btn-enviar">
               <span class="btn-icon">&#8679;</span> Selecionar e Enviar arquivo
             </button>
-            <!-- Botão do Cliente Explorar -->
             <button class="secondary-btn" id="btn-explorar-servidor" style="display: none;">
-              🔍 Explorar arquivos do servidor
+              🔍 Puxar dados do dispositivo servidor
             </button>
           </div>
 
@@ -99,12 +91,9 @@
             <h2 class="section-title">Recebidos nesta sessão</h2>
             <div id="lista-recebidos" class="lista-recebidos"></div>
           </div>
-
         </div>
       </section>
-
     </main>
-
   </div>
 
   <div class="modal-overlay" id="modal-codigo">
@@ -144,12 +133,10 @@
     <div class="modal-box">
       <h2>Receber arquivo?</h2>
       <p class="subtitle" id="recebimento-texto">Um dispositivo quer enviar um arquivo.</p>
-      
       <div class="recebimento-info" style="background: #121212; padding: 12px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #2a2a2a;">
         <div style="font-weight: 600; color: #fff;" id="recebimento-nome">arquivo.zip</div>
         <div style="font-size: 12px; color: #9a9a9a; margin-top: 4px;" id="recebimento-tamanho">0 MB</div>
       </div>
-
       <div style="display: flex; gap: 12px; justify-content: center;">
         <button class="primary-btn" id="btn-aceitar-recebimento">Aceitar e Salvar</button>
         <button class="secondary-btn" id="btn-recusar-recebimento" style="color: #ff6b6b; border-color: #ff6b6b;">Recusar</button>
@@ -162,7 +149,6 @@
       <button class="modal-close" id="btn-fechar-feedback">&times;</button>
       <h2>Avalie o Physical Cloud</h2>
       <p class="subtitle">Sua opinião nos ajuda a melhorar.</p>
-      
       <div class="star-rating" id="star-rating" style="margin-bottom: 16px;">
         <span class="star" data-value="1">★</span>
         <span class="star" data-value="2">★</span>
@@ -170,7 +156,6 @@
         <span class="star" data-value="4">★</span>
         <span class="star" data-value="5">★</span>
       </div>
-      
       <label style="display: block; font-size: 14px; margin-bottom: 8px; color: #9a9a9a;">Categoria:</label>
       <select id="feedback-categoria" class="destino-select" style="width: 100%; margin-bottom: 16px;">
         <option value="sugestao">Sugestão de melhoria</option>
@@ -178,9 +163,7 @@
         <option value="usabilidade">Problema de usabilidade</option>
         <option value="outro">Outro</option>
       </select>
-
       <textarea id="feedback-texto" placeholder="Conte-nos o que aconteceu ou sua sugestão..." style="width: 100%; height: 100px; background: #121212; border: 1px solid #2a2a2a; border-radius: 8px; padding: 12px; color: #fff; font-family: inherit; resize: vertical; margin-bottom: 16px;"></textarea>
-
       <div style="display: flex; gap: 12px; justify-content: flex-end;">
         <button class="secondary-btn" id="btn-enviar-feedback">Enviar Feedback</button>
       </div>
@@ -188,7 +171,6 @@
     </div>
   </div>
 
-  <!-- Modal do Explorador Remoto (Citra Style) -->
   <div class="modal-overlay" id="modal-explorador">
     <div class="modal-box" style="text-align: left; max-width: 640px; display: flex; flex-direction: column; max-height: 85vh;">
       <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
@@ -198,9 +180,7 @@
       </div>
       <p class="subtitle" id="explorador-caminho" style="margin-bottom: 8px; font-size: 12px; color: var(--text-muted);">Raiz</p>
       <p class="subtitle" id="explorador-status" style="margin-bottom: 12px;">Carregando...</p>
-      
       <div id="lista-explorador" class="explorer-list">
-        <!-- Itens injetados via JS -->
       </div>
     </div>
   </div>
@@ -286,9 +266,6 @@
 
     // ─── Controle de visibilidade dos botões do explorador ───
     function atualizarBotoesExplorador() {
-      const t = /** @type {any} */ (window).PhysicalCloudTransfer;
-      if (!t || t.canais.size === 0) return;
-      
       const sessoes = /** @type {any} */ (window).PhysicalCloud?.sessoes;
       if (!sessoes) return;
 
@@ -309,8 +286,30 @@
     window.addEventListener("physicalcloud:canal-aberto", atualizarBotoesExplorador);
     window.addEventListener("physicalcloud:sessao-ativa", atualizarBotoesExplorador);
 
-    document.getElementById("btn-compartilhar-pasta")?.addEventListener("click", () => {
-      window.dispatchEvent(new CustomEvent("physicalcloud:solicitar-compartilhar-pasta"));
+    // ─── CORREÇÃO CRÍTICA: Chamar showDirectoryPicker DIRETAMENTE no clique ───
+    document.getElementById("btn-compartilhar-pasta")?.addEventListener("click", async () => {
+      // Verifica se a API existe antes de tentar usar
+      if (!("showDirectoryPicker" in window)) {
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const msg = isAndroid
+          ? "Para compartilhar uma pasta no celular, atualize o Chrome para a versão 132 ou superior. Se não conseguir atualizar, você ainda pode enviar arquivos usando o botão 'Selecionar e Enviar arquivo'."
+          : "Seu navegador não suporta a API de seleção de pastas. Use o Chrome ou Edge atualizado no computador.";
+        alert(msg);
+        return;
+      }
+
+      try {
+        // Esta chamada DEVE ser feita aqui, dentro do handler de clique
+        const handle = await window.showDirectoryPicker({ mode: "read" });
+        // Dispara um evento para o PhysicalCloud-transfer.js registrar o handle
+        window.dispatchEvent(new CustomEvent("physicalcloud:pasta-selecionada", { detail: { handle } }));
+        alert("Pasta compartilhada com sucesso! O cliente já pode visualizar os arquivos.");
+      } catch (e) {
+        if (e.name !== "AbortError") {
+          console.error("Erro ao compartilhar pasta:", e);
+          alert("Não foi possível compartilhar a pasta: " + e.message);
+        }
+      }
     });
 
     // ─── Lógica do Explorador Remoto (Citra Style) ───
@@ -472,11 +471,7 @@
     });
 
     // ─── UI de progresso ─────────────────────────────────────────────────────
-
-    /** @type {Map<string, HTMLElement>} */
     const cardsPorTransfer = new Map();
-
-    /** @type {Map<string, { ultimoEnviado: number, ultimoTimestamp: number, velocidade: number }>} */
     const amostrasVelocidade = new Map();
 
     function formatarBytes(bytes) {
@@ -519,30 +514,23 @@
 
     window.addEventListener("physicalcloud:transfer-inicio", (event) => {
       const { transferId, sessaoId, nome, tamanho, direcao } = /** @type {CustomEvent} */ (event).detail;
-
       const card = document.createElement("div");
       card.className = "transfer-card";
       card.dataset.transferId = transferId;
-
       const icone = direcao === "envio" ? "↑" : "↓";
       const corIcone = direcao === "envio" ? "#39ff8f" : "#4db8ff";
-
       const header = document.createElement("div");
       header.className = "transfer-header";
-
       const iconeEl = document.createElement("span");
       iconeEl.className = "transfer-icone";
       iconeEl.style.color = corIcone;
       iconeEl.textContent = icone;
-
       const nomeEl = document.createElement("span");
       nomeEl.className = "transfer-nome";
       nomeEl.textContent = nome;
-
       const tamanhoEl = document.createElement("span");
       tamanhoEl.className = "transfer-tamanho";
       tamanhoEl.textContent = formatarBytes(tamanho);
-
       const cancelBtn = document.createElement("button");
       cancelBtn.className = "transfer-cancelar";
       cancelBtn.title = "Cancelar";
@@ -551,27 +539,22 @@
         const t = /** @type {any} */ (window).PhysicalCloudTransfer;
         if (t) t.cancelarTransferencia(transferId);
       });
-
       header.appendChild(iconeEl);
       header.appendChild(nomeEl);
       header.appendChild(tamanhoEl);
       header.appendChild(cancelBtn);
-
       const barraContainer = document.createElement("div");
       barraContainer.className = "transfer-barra-container";
       const barra = document.createElement("div");
       barra.className = "transfer-barra";
       barra.style.width = "0%";
       barraContainer.appendChild(barra);
-
       const statusEl = document.createElement("div");
       statusEl.className = "transfer-status";
       statusEl.textContent = "Iniciando…";
-
       card.appendChild(header);
       card.appendChild(barraContainer);
       card.appendChild(statusEl);
-
       cardsPorTransfer.set(transferId, card);
       if (listaTransfers) listaTransfers.appendChild(card);
       if (transfersAtivos) transfersAtivos.style.display = "";
@@ -581,17 +564,13 @@
       const { transferId, enviados, total } = /** @type {CustomEvent} */ (event).detail;
       const card = cardsPorTransfer.get(transferId);
       if (!card) return;
-
       const pct = total > 0 ? Math.round((enviados / total) * 100) : 0;
       const barra = /** @type {HTMLElement | null} */ (card.querySelector(".transfer-barra"));
       const status = card.querySelector(".transfer-status");
-
       if (barra) barra.style.width = pct + "%";
-
       const vel = calcularVelocidade(transferId, enviados);
       const restante = Math.max(0, total - enviados);
       const eta = vel > 0 ? restante / vel : Infinity;
-
       if (status) {
         status.textContent = `${pct}% — ${formatarBytes(enviados)} / ${formatarBytes(total)} — ${formatarVelocidade(vel)} — ETA ${formatarEta(eta)}`;
       }
@@ -610,7 +589,6 @@
         if (status) status.textContent = direcao === "envio" ? "Enviado com sucesso ✓" : "Recebido com sucesso ✓";
         const cancelBtn = card.querySelector(".transfer-cancelar");
         if (cancelBtn) /** @type {HTMLElement} */ (cancelBtn).style.display = "none";
-
         setTimeout(() => {
           card.remove();
           cardsPorTransfer.delete(transferId);
@@ -624,27 +602,21 @@
       if (direcao === "recebimento") {
         const item = document.createElement("div");
         item.className = "recebido-item";
-
         const iconeRecebido = document.createElement("span");
         iconeRecebido.className = "recebido-icone";
         iconeRecebido.textContent = "⬇";
-
         const infoDiv = document.createElement("div");
         infoDiv.className = "recebido-info";
-
         const nomeRecebido = document.createElement("span");
         nomeRecebido.className = "recebido-nome";
         nomeRecebido.textContent = nome;
-
         const detalheRecebido = document.createElement("span");
         detalheRecebido.className = "recebido-detalhe";
         detalheRecebido.textContent = formatarBytes(tamanho) + " · salvo";
-
         infoDiv.appendChild(nomeRecebido);
         infoDiv.appendChild(detalheRecebido);
         item.appendChild(iconeRecebido);
         item.appendChild(infoDiv);
-
         if (listaRecebidos) listaRecebidos.prepend(item);
         if (recebidosContainer) recebidosContainer.style.display = "";
       }
@@ -693,13 +665,10 @@
     window.addEventListener("physicalcloud:recebimento-pendente", (event) => {
       const { transferId, nome, tamanho, nomeRemetente } = event.detail;
       ofertaAtual = transferId;
-
       textoRecebimento.textContent = `"${nomeRemetente}" quer enviar o arquivo:`;
       nomeRecebimento.textContent = nome;
-      
       if (tamanho < 1024 * 1024) tamanhoRecebimento.textContent = (tamanho / 1024).toFixed(1) + " KB";
       else tamanhoRecebimento.textContent = (tamanho / (1024 * 1024)).toFixed(1) + " MB";
-
       modalRecebimento.classList.add("active");
     });
 
