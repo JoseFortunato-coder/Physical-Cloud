@@ -15,7 +15,7 @@
 
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-logo">
-        <!-- NOVA LOGO: Nuvem verde com setas -->
+        <!-- NOVA LOGO -->
         <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M17.5 19H9C6.23858 19 4 16.7614 4 14C4 11.4805 5.86486 9.39688 8.29261 9.04353C8.96302 6.18154 11.5278 4 14.5 4C17.7445 4 20.4558 6.36353 20.9355 9.47678C22.6924 10.0123 24 11.6417 24 13.5C24 16.5376 21.5376 19 18.5 19H17.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
           <path d="M9 15L11 13L13 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -73,9 +73,20 @@
             <select id="destino-select" class="destino-select"></select>
           </div>
 
+          <!-- Botão do Servidor Compartilhar Pasta -->
+          <div id="servidor-acoes" style="display:none; margin-bottom: 16px;">
+             <button class="secondary-btn" id="btn-compartilhar-pasta" style="border-color: var(--accent); color: var(--accent); width: 100%;">
+                📂 Compartilhar uma pasta com o cliente
+             </button>
+          </div>
+
           <div class="nuvem-acoes">
             <button class="primary-btn" id="btn-enviar">
               <span class="btn-icon">&#8679;</span> Selecionar e Enviar arquivo
+            </button>
+            <!-- Botão do Cliente Explorar -->
+            <button class="secondary-btn" id="btn-explorar-servidor" style="display: none;">
+              🔍 Explorar arquivos do servidor
             </button>
           </div>
 
@@ -177,6 +188,23 @@
     </div>
   </div>
 
+  <!-- Modal do Explorador Remoto (Citra Style) -->
+  <div class="modal-overlay" id="modal-explorador">
+    <div class="modal-box" style="text-align: left; max-width: 640px; display: flex; flex-direction: column; max-height: 85vh;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+        <button id="btn-explorador-voltar" class="secondary-btn" style="padding: 6px 12px; display: none;">← Voltar</button>
+        <h2 style="margin: 0; font-size: 18px; flex: 1;">Arquivos no dispositivo</h2>
+        <button class="modal-close" id="btn-fechar-explorador" style="position: static;">&times;</button>
+      </div>
+      <p class="subtitle" id="explorador-caminho" style="margin-bottom: 8px; font-size: 12px; color: var(--text-muted);">Raiz</p>
+      <p class="subtitle" id="explorador-status" style="margin-bottom: 12px;">Carregando...</p>
+      
+      <div id="lista-explorador" class="explorer-list">
+        <!-- Itens injetados via JS -->
+      </div>
+    </div>
+  </div>
+
   <button class="btn-tornar-servidor" id="btn-tornar-servidor">Se tornar o dispositivo servidor</button>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -254,6 +282,169 @@
     window.addEventListener("physicalcloud:sessao-encerrada", atualizarEstadoNuvem);
     document.querySelectorAll(".nav-item[data-tab='nuvem']").forEach(btn => {
       btn.addEventListener("click", atualizarEstadoNuvem);
+    });
+
+    // ─── Controle de visibilidade dos botões do explorador ───
+    function atualizarBotoesExplorador() {
+      const t = /** @type {any} */ (window).PhysicalCloudTransfer;
+      if (!t || t.canais.size === 0) return;
+      
+      const sessoes = /** @type {any} */ (window).PhysicalCloud?.sessoes;
+      if (!sessoes) return;
+
+      let souServidorNestaSessao = false;
+      let souClienteNestaSessao = false;
+      for (const [sid, s] of sessoes) {
+        if (s.papel === "servidor") souServidorNestaSessao = true;
+        if (s.papel === "cliente") souClienteNestaSessao = true;
+      }
+
+      const btnCompartilhar = document.getElementById("btn-compartilhar-pasta");
+      const btnExplorar = document.getElementById("btn-explorar-servidor");
+      
+      if (btnCompartilhar) btnCompartilhar.parentElement.style.display = souServidorNestaSessao ? "" : "none";
+      if (btnExplorar) btnExplorar.style.display = souClienteNestaSessao ? "" : "none";
+    }
+
+    window.addEventListener("physicalcloud:canal-aberto", atualizarBotoesExplorador);
+    window.addEventListener("physicalcloud:sessao-ativa", atualizarBotoesExplorador);
+
+    document.getElementById("btn-compartilhar-pasta")?.addEventListener("click", () => {
+      window.dispatchEvent(new CustomEvent("physicalcloud:solicitar-compartilhar-pasta"));
+    });
+
+    // ─── Lógica do Explorador Remoto (Citra Style) ───
+    let caminhoAtualExplorador = "";
+    let acumuladorItens = [];
+    let caminhoAtualRecebido = "";
+    let paginaAtualRecebida = 0;
+    let totalPaginasRecebidas = 0;
+
+    function renderizarExplorador(itens, caminho) {
+      const lista = document.getElementById("lista-explorador");
+      const status = document.getElementById("explorador-status");
+      const caminhoEl = document.getElementById("explorador-caminho");
+      const btnVoltar = document.getElementById("btn-explorador-voltar");
+
+      lista.innerHTML = "";
+      caminhoEl.textContent = caminho ? `/${caminho}` : "Raiz";
+      btnVoltar.style.display = caminho ? "" : "none";
+      status.style.color = "var(--text-muted)";
+
+      if (!itens || itens.length === 0) {
+        status.textContent = "Pasta vazia.";
+        return;
+      }
+
+      status.textContent = `${itens.length} item(ns).`;
+
+      itens.forEach(item => {
+        const el = document.createElement("div");
+        el.className = "explorer-item";
+
+        const icone = document.createElement("span");
+        icone.className = "explorer-icon";
+        icone.textContent = item.tipo === "directory" ? "📁" : "📄";
+
+        const info = document.createElement("div");
+        info.className = "explorer-info";
+
+        const nomeEl = document.createElement("div");
+        nomeEl.className = "explorer-name";
+        nomeEl.textContent = item.nome;
+
+        const detalhesEl = document.createElement("div");
+        detalhesEl.className = "explorer-details";
+        if (item.tipo === "file") {
+          const tamanho = item.tamanho < 1024 * 1024
+            ? (item.tamanho / 1024).toFixed(1) + " KB"
+            : (item.tamanho / (1024 * 1024)).toFixed(1) + " MB";
+          detalhesEl.textContent = tamanho;
+        } else {
+          detalhesEl.textContent = "Pasta";
+        }
+
+        info.appendChild(nomeEl);
+        info.appendChild(detalhesEl);
+        el.appendChild(icone);
+        el.appendChild(info);
+
+        el.addEventListener("click", () => {
+          if (item.tipo === "directory") {
+            caminhoAtualExplorador = item.caminho;
+            window.dispatchEvent(new CustomEvent("physicalcloud:solicitar-exploracao", {
+              detail: { caminho: item.caminho },
+            }));
+            document.getElementById("explorador-status").textContent = "Carregando...";
+            document.getElementById("lista-explorador").innerHTML = "";
+          } else {
+            window.dispatchEvent(new CustomEvent("physicalcloud:solicitar-download-remoto", {
+              detail: { caminho: item.caminho },
+            }));
+            status.textContent = `Solicitando download de "${item.nome}"...`;
+          }
+        });
+
+        lista.appendChild(el);
+      });
+    }
+
+    window.addEventListener("physicalcloud:lista-recebida", (event) => {
+      const { itens, caminho, erro, paginaAtual, totalPaginas } = event.detail;
+      const status = document.getElementById("explorador-status");
+
+      if (erro) {
+        status.textContent = erro;
+        status.style.color = "#ff6b6b";
+        acumuladorItens = [];
+        return;
+      }
+
+      if (paginaAtual === 1) {
+        acumuladorItens = [];
+        caminhoAtualRecebido = caminho;
+        totalPaginasRecebidas = totalPaginas;
+      }
+
+      acumuladorItens = acumuladorItens.concat(itens);
+      paginaAtualRecebida = paginaAtual;
+
+      status.textContent = `Carregando... (Página ${paginaAtual} de ${totalPaginas})`;
+
+      if (paginaAtualRecebida === totalPaginasRecebidas) {
+        renderizarExplorador(acumuladorItens, caminhoAtualRecebido);
+      }
+    });
+
+    document.getElementById("btn-explorador-voltar")?.addEventListener("click", () => {
+      const partes = caminhoAtualExplorador.split("/").filter(Boolean);
+      partes.pop();
+      caminhoAtualExplorador = partes.join("/");
+      window.dispatchEvent(new CustomEvent("physicalcloud:solicitar-exploracao", {
+        detail: { caminho: caminhoAtualExplorador },
+      }));
+      document.getElementById("explorador-status").textContent = "Carregando...";
+      document.getElementById("lista-explorador").innerHTML = "";
+    });
+
+    document.getElementById("btn-explorar-servidor")?.addEventListener("click", () => {
+      const modal = document.getElementById("modal-explorador");
+      const status = document.getElementById("explorador-status");
+      const lista = document.getElementById("lista-explorador");
+      
+      modal.classList.add("active");
+      caminhoAtualExplorador = "";
+      status.textContent = "Solicitando lista ao servidor...";
+      status.style.color = "var(--text-muted)";
+      lista.innerHTML = "";
+      
+      window.dispatchEvent(new CustomEvent("physicalcloud:solicitar-exploracao", {
+        detail: { caminho: "" },
+      }));
+    });
+
+    document.getElementById("btn-fechar-explorador")?.addEventListener("click", () => {
+      document.getElementById("modal-explorador").classList.remove("active");
     });
 
     // ─── Botão Enviar arquivo ─────────────────────────────────────────────────

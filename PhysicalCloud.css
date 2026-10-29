@@ -186,7 +186,9 @@ body {
 }
 
 .device-icon {
-  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
@@ -287,8 +289,6 @@ body {
   margin-bottom: 28px;
 }
 
-/* [Fix.6] Removido .close-btn — morto. HTML usa .modal-close. */
-
 .code-container {
   display: flex;
   align-items: center;
@@ -313,8 +313,6 @@ body {
   color: #00e676;
   box-shadow: 0 4px 12px rgba(0, 230, 118, 0.15);
 }
-
-/* [Fix.6] Removido .code-divider — morto. Nenhum HTML usa. */
 
 .modal-close {
   position: absolute;
@@ -392,7 +390,7 @@ body {
   border-bottom-color: #ffffff;
 }
 
-/* ─── [Fix.5] Sidebar mobile (hamburger) ─────────────────────────────────────── */
+/* ─── Sidebar mobile (hamburger) ─────────────────────────────────────────────── */
 
 .sidebar-toggle {
   display: none;
@@ -422,7 +420,7 @@ body {
   display: block;
 }
 
-/* ─── [Fix.5] Aba Nuvem: seletor de destino + ações ─────────────────────────── */
+/* ─── Aba Nuvem: seletor de destino + ações ─────────────────────────────── */
 
 .destino-container {
   display: flex;
@@ -457,6 +455,7 @@ body {
   display: flex;
   gap: 12px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 
 .btn-icon {
@@ -472,7 +471,7 @@ body {
   margin: 24px 0 12px;
 }
 
-/* ─── [Fix.5] Cards de transferência ────────────────────────────────────────── */
+/* ─── Cards de transferência ──────────────────────────────────────────────── */
 
 .lista-transfers {
   display: flex;
@@ -563,7 +562,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* ─── [Fix.5] Histórico de recebidos ────────────────────────────────────────── */
+/* ─── Histórico de recebidos ────────────────────────────────────────── */
 
 .lista-recebidos {
   display: flex;
@@ -608,8 +607,6 @@ body {
   color: var(--text-muted);
 }
 
-/* ─── [Fix.5] Responsivo ────────────────────────────────────────────────────── */
-
 /* ─── Responsivo ────────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
@@ -643,7 +640,6 @@ body {
     font-size: 14px;
   }
 
-  /* Ajustes da aba Nuvem no celular */
   .destino-container {
     flex-direction: column;
     align-items: stretch;
@@ -654,7 +650,7 @@ body {
     flex-direction: column;
   }
 
-  .nuvem-acoes .primary-btn {
+  .nuvem-acoes .primary-btn, .nuvem-acoes .secondary-btn {
     width: 100%;
   }
 
@@ -664,14 +660,14 @@ body {
   }
 
   .transfer-nome {
-    flex: 1 1 calc(100% - 80px); /* Deixa espaço para o ícone e o botão X */
+    flex: 1 1 calc(100% - 80px);
     margin-bottom: 4px;
   }
 
   .transfer-tamanho {
     flex: 1 1 100%;
     text-align: right;
-    padding-left: 32px; /* Alinha o texto embaixo do nome */
+    padding-left: 32px;
   }
 
   .transfer-cancelar {
@@ -679,7 +675,7 @@ body {
   }
 
   .transfer-status {
-    white-space: normal; /* Permite quebrar a linha do progresso */
+    white-space: normal;
     font-size: 11px;
     line-height: 1.4;
   }
@@ -689,11 +685,12 @@ body {
   }
   
   .device-btn-encerrar {
-    margin-left: 36px; /* Alinha embaixo do nome */
+    margin-left: 36px;
     width: calc(100% - 36px);
   }
 }
-/* ─── Aviso Web (Bloco C) ────────────────────────────────────────────────── */
+
+/* ─── Aviso Web ────────────────────────────────────────────────── */
 .aviso-web {
   background: rgba(255, 165, 0, 0.1);
   border: 1px solid #ffa500;
@@ -705,10 +702,12 @@ body {
   margin-bottom: 24px;
 }
 
-/* ─── Modal de Recebimento (Bloco C.1) ───────────────────────────────────── */
+/* ─── Modal de Recebimento ───────────────────────────────────── */
 #modal-recebimento .modal-box {
   max-width: 420px;
-}/* ─── Feedback e Estrelas ────────────────────────────────────────────────── */
+}
+
+/* ─── Feedback e Estrelas ────────────────────────────────────────────────── */
 .star-rating {
   display: flex;
   gap: 8px;
@@ -728,33 +727,6 @@ body {
   color: var(--accent);
 }
 
-/* Botão de Feedback na Sidebar (Integrado à paleta) */
-#btn-abrir-feedback {
-  margin-top: auto !important;
-  border-top: 1px solid #2a2a2a !important;
-  border-radius: 6px;
-  padding: 10px 12px;
-  color: var(--accent); /* texto verde */
-  font-weight: 600;
-  text-align: left;
-}
-#btn-abrir-feedback:hover {
-  background: var(--bg-hover);
-  color: var(--accent);
-}
-
-/* Ajustes no modal de feedback */
-#modal-feedback .modal-box {
-  max-width: 400px;
-}
-#modal-feedback select,
-#modal-feedback textarea {
-  outline: none;
-}
-#modal-feedback select:focus,
-#modal-feedback textarea:focus {
-  border-color: var(--accent);
-}/* Ajustes no botão de feedback e ícone do dispositivo */
 #btn-abrir-feedback {
   margin-top: auto !important;
   border-top: 1px solid #2a2a2a !important;
@@ -769,9 +741,66 @@ body {
   color: var(--accent);
 }
 
-.device-icon {
+#modal-feedback .modal-box {
+  max-width: 400px;
+}
+#modal-feedback select,
+#modal-feedback textarea {
+  outline: none;
+}
+#modal-feedback select:focus,
+#modal-feedback textarea:focus {
+  border-color: var(--accent);
+}
+
+/* ─── Explorador de Arquivos (Citra Style) ─────────────────────────────────── */
+.explorer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--bg-main);
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.explorer-item {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.explorer-item:hover {
+  background: var(--bg-hover);
+}
+
+.explorer-icon {
+  font-size: 20px;
   flex-shrink: 0;
+}
+
+.explorer-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.explorer-name {
+  font-size: 14px;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.explorer-details {
+  font-size: 12px;
+  color: var(--text-muted);
 }

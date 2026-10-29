@@ -148,7 +148,7 @@ function atualizarListaDispositivos() {
         card.className = "device-card";
         card.dataset.sessaoId = sessaoId;
 
-                const icone = document.createElement("div");
+        const icone = document.createElement("div");
         icone.className = "device-icon";
         // Ícone SVG de Notebook + Celular
         icone.innerHTML = `
